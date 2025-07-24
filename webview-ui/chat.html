@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link href="{{chat_css_uri}}" rel="stylesheet">
+    
+    <title>Baykar AI Chat</title>
+</head>
+<body>
+
+    <div id="chat-container" 
+         data-ai-icon-uri="{{ai_icon_uri}}" 
+         data-user-icon-uri="{{user_icon_uri}}">
+
+        <div id="welcome-container">
+            <img src="{{logo_uri}}" alt="Baykar AI Logo" id="welcome-logo"/>
+            <h1>Baykar AI</h1>
+            <p>Kod geliştirme ve analiz süreçlerinizi yapay zeka ile hızlandırın.</p>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <div class="input-wrapper">
+            <input type="text" id="prompt-input" placeholder="Bir soru sorun..."/>
+            <button id="send-button" title="Gönder">
+                <img src="{{send_icon_uri}}" alt="Gönder"/>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="{{chat_js_uri}}"></script>
+
+</body>
+</html>
