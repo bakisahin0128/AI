@@ -2,7 +2,7 @@
   "name": "baykar-ai-fixer",
   "displayName": "Baykar AI Fixer",
   "description": "Baykar projelerindeki kod hatalarını LLM kullanarak otomatik düzelten eklenti.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "Baykar",
   "repository": {
     "type": "git",
@@ -36,6 +36,10 @@
       {
         "command": "baykar-ai.showChat",
         "title": "Baykar AI Sohbetini Göster"
+      },
+      {
+        "command": "baykar-ai.sendToChat",
+        "title": "✈️ AI Sohbete Gönder"
       }
     ],
     "viewsContainers": {
@@ -68,8 +72,24 @@
             "dark": "webview-ui/baykar-icon.svg"
           }
         }
+      ],
+      "editor/context": [
+        {
+          "when": "editorHasSelection",
+          "command": "baykar-ai.sendToChat",
+          "group": "navigation@1"
+        }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "baykar-ai.sendToChat",
+        "key": "ctrl+alt+a", 
+        "mac": "cmd+alt+a",
+        "when": "editorHasSelection"
+      }
+    ]
+    
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

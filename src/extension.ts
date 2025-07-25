@@ -20,6 +20,12 @@ export function activate(context: vscode.ExtensionContext) {
 
     console.log('Tebrikler, "baykar-ai-fixer" eklentiniz şimdi aktif!');
 
+    // --- ChatProvider'ı en başta oluşturun ki diğer komutlar ona erişebilsin
+    const chatProvider = new ChatViewProvider(context);
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(ChatViewProvider.viewType, chatProvider)
+    );
+
     // API Anahtarı ayarlama komutu
     let setApiKeyCommand = vscode.commands.registerCommand('baykar-ai-fixer.setApiKey', async () => {
         const apiKey = await vscode.window.showInputBox({
@@ -39,6 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Hata düzeltme komutu
     let applyFixCommand = vscode.commands.registerCommand('baykar-ai-fixer.applyFix',
         async (args: { uri: string, diagnostic: { message: string, range: [number, number, number, number] } }) => {
+            // ... Bu komutun içeriği aynı kalıyor ...
             const uri = vscode.Uri.parse(args.uri);
             const document = await vscode.workspace.openTextDocument(uri);
             const range = new vscode.Range(new vscode.Position(args.diagnostic.range[0], args.diagnostic.range[1]), new vscode.Position(args.diagnostic.range[2], args.diagnostic.range[3]));
@@ -78,7 +85,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Seçili kodu değiştirme komutu
     let modifyWithInputCommand = vscode.commands.registerCommand('baykar-ai-fixer.modifyWithInput',
         async (args: { uri: string, range: [number, number, number, number] }) => {
-
+            // ... Bu komutun içeriği aynı kalıyor ...
             const uri = vscode.Uri.parse(args.uri);
             const editor = vscode.window.visibleTextEditors.find(e => e.document.uri.toString() === uri.toString());
             if (!editor) {
@@ -135,8 +142,26 @@ export function activate(context: vscode.ExtensionContext) {
         });
     context.subscriptions.push(modifyWithInputCommand);
 
+    // --- YENİ KOMUT: Seçili kodu ve konumunu Chat Provider'a gönderir
+    let sendToChatCommand = vscode.commands.registerCommand('baykar-ai.sendToChat', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (editor && !editor.selection.isEmpty) {
+            const selection = editor.selection;
+            const selectedText = editor.document.getText(selection);
 
-    // Provider'ların Kaydı
+            // Chat Provider'a bağlamı set etmesini söyle
+            chatProvider.setActiveContext(editor.document.uri, selection, selectedText);
+
+            // Kullanıcıya kolaylık olması için Chat panelini açıp oraya odaklan
+            vscode.commands.executeCommand('baykar-ai-fixer.chatView.focus');
+        } else {
+            vscode.window.showInformationMessage('Lütfen önce bir kod bloğu seçin.');
+        }
+    });
+    context.subscriptions.push(sendToChatCommand);
+
+
+    // --- Provider'ların Kaydı
     context.subscriptions.push(
         vscode.languages.registerCodeActionsProvider('python', new BaykarAiActionProvider(context), {
             providedCodeActionKinds: BaykarAiActionProvider.providedCodeActionKinds
@@ -145,10 +170,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.languages.registerHoverProvider('python', new BaykarAiHoverProvider())
     );
-    const chatProvider = new ChatViewProvider(context);
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(ChatViewProvider.viewType, chatProvider)
-    );
+    // Chat provider zaten yukarıda kaydedildi.
 
     // Durum Çubuğu Butonu ve Komutu
     const statusBarButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
