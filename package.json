@@ -1,8 +1,8 @@
 {
   "name": "baykar-ai-fixer",
-  "displayName": "Baykar AI Fixer",
+  "displayName": "Baykar AI",
   "description": "Baykar projelerindeki kod hatalarını LLM kullanarak otomatik düzelten eklenti.",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "publisher": "Baykar",
   "repository": {
     "type": "git",
@@ -14,6 +14,7 @@
   "categories": [
     "Other"
   ],
+  "icon": "webview-ui/baykar.png",
   "activationEvents": [
     "onLanguage:python",
     "onView:baykar-ai-fixer.chatView"

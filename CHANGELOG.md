@@ -1,9 +1,7 @@
-# Change Log
+## Change Log
 
-All notable changes to the "baykar-ai-fixer" extension will be documented in this file.
+### [Unreleased]
+- ⁃  
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+### [1.0.0] – 2025‑07‑26
+- Initial release of the README.md for Baykar AI Fixer
