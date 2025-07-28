@@ -1,6 +1,6 @@
 {
   "name": "baykar-ai-fixer",
-  "displayName": "Baykar AI",
+  "displayName": "İvme",
   "description": "Baykar projelerindeki kod hatalarını LLM kullanarak otomatik düzelten eklenti.",
   "version": "1.0.0",
   "publisher": "Baykar",
@@ -14,7 +14,7 @@
   "categories": [
     "Other"
   ],
-  "icon": "webview-ui/baykar.png",
+  "icon": "webview-ui/assets/baykar.png",
   "activationEvents": [
     "onLanguage:python",
     "onView:baykar-ai-fixer.chatView"
@@ -24,30 +24,30 @@
     "commands": [
       {
         "command": "baykar-ai-fixer.applyFix",
-        "title": "Baykar AI: Düzeltmeyi Uygula"
-      },
-      {
-        "command": "baykar-ai-fixer.setApiKey",
-        "title": "Baykar AI: LLM API Anahtarını Ayarla"
+        "title": "İvme: Düzeltmeyi Uygula"
       },
       {
         "command": "baykar-ai-fixer.modifyWithInput",
-        "title": "Baykar AI: Seçili Kodu Değiştir"
+        "title": "İvme ile Değiştir"
       },
       {
         "command": "baykar-ai.showChat",
-        "title": "Baykar AI Sohbetini Göster"
+        "title": "İvme Sohbetini Göster"
       },
       {
         "command": "baykar-ai.sendToChat",
-        "title": "✈️ AI Sohbete Gönder"
+        "title": "✈️ İvme'ye Gönder"
+      },
+      {
+        "command": "baykar-ai-fixer.checkVllmStatus",
+        "title": "İvme: Aktif Sunucu Durumunu Kontrol Et"
       }
     ],
     "viewsContainers": {
       "activitybar": [
         {
           "id": "baykar-ai-chat-container",
-          "title": "Baykar AI Chat",
+          "title": "İvme",
           "icon": "$(comment-discussion)"
         }
       ]
@@ -56,7 +56,7 @@
       "baykar-ai-chat-container": [
         {
           "id": "baykar-ai-fixer.chatView",
-          "name": "BAYKAR AI CHAT",
+          "name": "İvme",
           "type": "webview",
           "icon": "webview-ui/baykar-icon.svg"
         }
@@ -85,12 +85,41 @@
     "keybindings": [
       {
         "command": "baykar-ai.sendToChat",
-        "key": "ctrl+alt+a", 
+        "key": "ctrl+alt+a",
         "mac": "cmd+alt+a",
         "when": "editorHasSelection"
       }
-    ]
-    
+    ],
+    "configuration": {
+      "title": "İvme Ayarları",
+      "properties": {
+        "baykar-ai-fixer.api.activeService": {
+          "type": "string",
+          "enum": [
+            "vLLM",
+            "Gemini"
+          ],
+          "default": "vLLM",
+          "description": "Kod analizi ve üretimi için kullanılacak yapay zeka servisi."
+        },
+        "baykar-ai-fixer.vllm.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:8000/v1",
+          "description": "Yerel vLLM sunucusunun OpenAI uyumlu adresi."
+        },
+        "baykar-ai-fixer.vllm.modelName": {
+          "type": "string",
+          "default": "Qwen/Qwen1.5-7B-Chat",
+          "description": "vLLM sunucusunda kullanılacak modelin adı."
+        },
+        "baykar-ai-fixer.gemini.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Google Gemini API anahtarınız.",
+          "markdownDescription": "Google AI Studio üzerinden alacağınız API anahtarı. Bu anahtar gizli tutulmalıdır."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -101,18 +130,18 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.90.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "18.x",
+    "@types/vscode": "^1.90.0",
     "@typescript-eslint/eslint-plugin": "^7.7.1",
     "@typescript-eslint/parser": "^7.7.1",
-    "eslint": "^8.57.0",
-    "typescript": "^5.4.5",
     "@vscode/test-cli": "^0.0.9",
-    "@vscode/test-electron": "^2.3.9"
+    "@vscode/test-electron": "^2.3.9",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5"
   },
   "dependencies": {
-    "@types/axios": "^0.14.0",
+    "@google/generative-ai": "^0.11.3",
     "axios": "^1.7.2"
   }
 }

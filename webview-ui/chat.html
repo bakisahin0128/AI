@@ -7,17 +7,27 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <link href="{{chat_css_uri}}" rel="stylesheet">
     
-    <title>Baykar AI Chat</title>
+    <title>İvme Chat</title>
 </head>
 <body>
+    <header class="chat-header">
+        <div class="header-logo-title">
+            <img src="{{logo_uri}}" alt="Logo" class="header-logo"/>
+            <span>İvme</span>
+        </div>
+        <button id="settings-button" class="icon-button" title="Ayarlar">
+             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
+                <path fill-rule="evenodd" d="M6.955.057a.75.75 0 0 1 .457.873 6.945 6.945 0 0 0-.284 2.22 1.5 1.5 0 0 1-2.924 1.018.75.75 0 0 1 .331-1.026A5.445 5.445 0 0 1 8.045 1.5a.75.75 0 0 1 1.028-.356A5.445 5.445 0 0 1 12.5 4.545a.75.75 0 0 1-1.026.331 1.5 1.5 0 0 1 1.018-2.924 6.945 6.945 0 0 0 2.22-.284.75.75 0 0 1 .873.457l.002.004a7.002 7.002 0 0 1 2.348 9.531.75.75 0 0 1-.77.925 1.5 1.5 0 0 1-2.618-1.536 5.502 5.502 0 0 0-7.964-7.964A1.5 1.5 0 0 1 4.01 2.618a.75.75 0 0 1-.925-.77A7.002 7.002 0 0 1 .737.51l.004-.002A.75.75 0 0 1 .993.04L1 .035a6.954 6.954 0 0 1 5.955.022ZM1.5 8.045a5.445 5.445 0 0 0 3.045 3.455.75.75 0 0 1 .331 1.026 1.5 1.5 0 0 1-2.924-1.018 6.945 6.945 0 0 1-.284-2.22.75.75 0 0 1 .873-.457A6.954 6.954 0 0 1 8 15.01a6.954 6.954 0 0 1 5.955-5.955.75.75 0 0 1 .873.457 6.945 6.945 0 0 1-.284 2.22 1.5 1.5 0 0 1-2.924 1.018.75.75 0 0 1 .331-1.026A5.445 5.445 0 0 0 8.5 9.455a.75.75 0 0 1-1.026.331 1.5 1.5 0 0 1 1.018-2.924 6.945 6.945 0 0 1 2.22-.284.75.75 0 0 1 .457-.873 7.002 7.002 0 0 0-9.53-9.531.75.75 0 0 1 .924-.77 1.5 1.5 0 0 1-1.536 2.618 5.502 5.502 0 0 1-7.964 7.964 1.5 1.5 0 0 1 2.618 1.536.75.75 0 0 1-.77.925A7.002 7.002 0 0 0 1.5 8.045Z" />
+            </svg>
+        </button>
+    </header>
 
     <div id="chat-container" 
          data-ai-icon-uri="{{ai_icon_uri}}" 
          data-user-icon-uri="{{user_icon_uri}}">
-
         <div id="welcome-container">
-            <img src="{{logo_uri}}" alt="Baykar AI Logo" id="welcome-logo"/>
-            <h1>Baykar AI</h1>
+            <img src="{{logo_uri}}" alt="İvme Logo" id="welcome-logo"/>
+            <h1>İvme</h1>
             <p>Kod geliştirme ve analiz süreçlerinizi yapay zeka ile hızlandırın.</p>
         </div>
     </div>
@@ -33,6 +43,44 @@
             <button id="send-button" title="Gönder">
                 <img src="{{send_icon_uri}}" alt="Gönder"/>
             </button>
+        </div>
+    </div>
+    
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>Ayarlar</h2>
+            <form id="settings-form">
+                <div class="form-group">
+                    <label for="service-select">Aktif Servis</label>
+                    <select id="service-select">
+                        <option value="vLLM">vLLM</option>
+                        <option value="Gemini">Gemini</option>
+                    </select>
+                </div>
+
+                <div id="vllm-settings">
+                    <div class="form-group">
+                        <label for="vllm-url">vLLM Sunucu Adresi</label>
+                        <input type="text" id="vllm-url" placeholder="http://localhost:8000/v1">
+                    </div>
+                    <div class="form-group">
+                        <label for="vllm-model">vLLM Model Adı</label>
+                        <input type="text" id="vllm-model" placeholder="Qwen/Qwen1.5-7B-Chat">
+                    </div>
+                </div>
+
+                <div id="gemini-settings" class="hidden">
+                    <div class="form-group">
+                        <label for="gemini-key">Gemini API Anahtarı</label>
+                        <input type="password" id="gemini-key" placeholder="API Anahtarınızı girin">
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cancel-settings-button" class="secondary-button">İptal</button>
+                    <button type="submit" class="primary-button">Kaydet</button>
+                </div>
+            </form>
         </div>
     </div>
 
