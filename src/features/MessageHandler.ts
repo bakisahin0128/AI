@@ -45,31 +45,50 @@ export class MessageHandler {
         }
     }
 
-    public async handleFileContextInteraction(instruction: string, context: { uri: vscode.Uri; content: string; fileName: string; }, webview: vscode.Webview) {
+    // DEĞİŞİKLİK: Fonksiyon artık tek bir context yerine bir context dizisi alıyor.
+    public async handleFileContextInteraction(instruction: string, contexts: Array<{ uri: vscode.Uri; content: string; fileName: string; }>, webview: vscode.Webview) {
+        this.conversationManager.addMessage('user', instruction);
+        
         try {
-            const prompt = createFileInteractionPrompt(context.fileName, instruction, context.content);
+            // DEĞİŞİKLİK: Prompt'a tüm dosya context'lerini gönder.
+            const prompt = createFileInteractionPrompt(contexts, instruction);
             const responseText = await this.apiManager.generateContent(prompt);
             const cleanedJson = cleanLLMJsonBlock(responseText);
             const aiResponse: AiResponse = JSON.parse(cleanedJson);
 
             if (aiResponse.explanation) {
+                this.conversationManager.addMessage('assistant', aiResponse.explanation);
                 webview.postMessage({ type: 'addResponse', payload: aiResponse.explanation });
             }
 
-            if (aiResponse.intent === 'modify' && aiResponse.modifiedCode) {
-                const writeData = Buffer.from(aiResponse.modifiedCode, 'utf8');
-                await vscode.workspace.fs.writeFile(context.uri, writeData);
-                // Dosya içeriğini güncel tutmak için context'i de güncelle
-                context.content = aiResponse.modifiedCode;
+            // DEĞİŞİKLİK: Eğer intent 'modify' ise, doğru dosyayı bul ve güncelle.
+            if (aiResponse.intent === 'modify' && aiResponse.modifiedCode && aiResponse.fileName) {
+                const contextToModify = contexts.find(c => c.fileName === aiResponse.fileName);
+                
+                if (contextToModify) {
+                    const writeData = Buffer.from(aiResponse.modifiedCode, 'utf8');
+                    await vscode.workspace.fs.writeFile(contextToModify.uri, writeData);
+                    // Dosya içeriğini güncel tutmak için context'i de güncelle
+                    contextToModify.content = aiResponse.modifiedCode;
+                    vscode.window.showInformationMessage(`'${aiResponse.fileName}' dosyası başarıyla güncellendi.`);
+                } else {
+                    // YENİ: AI'ın döndürdüğü dosya adı bağlamda bulunamazsa hata yönetimi.
+                    const errorMsg = `**Hata:** Model, mevcut olmayan bir dosyayı (${aiResponse.fileName}) değiştirmeye çalıştı.`;
+                    this.conversationManager.addMessage('assistant', errorMsg);
+                    webview.postMessage({ type: 'addResponse', payload: errorMsg });
+                }
             }
 
         } catch (error: any) {
             console.error("File Interaction API Error:", error);
+            this.conversationManager.removeLastMessage();
             webview.postMessage({ type: 'addResponse', payload: this.getErrorMessage() });
         }
     }
 
     public async handleContextualModification(instruction: string, codeToModify: string, uri: vscode.Uri, selection: vscode.Selection, webview: vscode.Webview) {
+        this.conversationManager.addMessage('user', instruction);
+
         try {
             const prompt = createModificationPrompt(instruction, codeToModify);
             const modifiedCode = await this.apiManager.generateContent(prompt);
@@ -79,10 +98,13 @@ export class MessageHandler {
             edit.replace(uri, selection, cleanedCode);
             await vscode.workspace.applyEdit(edit);
 
-            webview.postMessage({ type: 'addResponse', payload: `Kodunuz başarıyla güncellendi!\n\n\`\`\`python\n${cleanedCode}\n\`\`\`` });
+            const responsePayload = `Kodunuz başarıyla güncellendi!\n\n\`\`\`python\n${cleanedCode}\n\`\`\``;
+            this.conversationManager.addMessage('assistant', responsePayload);
+            webview.postMessage({ type: 'addResponse', payload: responsePayload });
 
         } catch (error: any) {
             console.error("Contextual Modification API Error:", error);
+            this.conversationManager.removeLastMessage();
             webview.postMessage({ type: 'addResponse', payload: this.getErrorMessage() });
         }
     }

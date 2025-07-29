@@ -16,8 +16,13 @@ export function setInputEnabled(enabled) {
     DOM.sendButton.disabled = !enabled;
 
     if (enabled) {
-        const fileTag = DOM.fileContextArea.querySelector('.file-tag span');
-        DOM.input.placeholder = fileTag ? `${fileTag.textContent} hakkında bir talimat girin...` : 'Bir soru sorun veya dosya ekleyin...';
+        // DEĞİŞİKLİK: Placeholder metnini dosya sayısına göre ayarla
+        const fileTags = DOM.fileContextArea.querySelectorAll('.file-tag');
+        if (fileTags.length > 0) {
+            DOM.input.placeholder = `${fileTags.length} dosya hakkında bir talimat girin...`;
+        } else {
+            DOM.input.placeholder = 'Bir soru sorun veya dosya ekleyin...';
+        }
         DOM.sendButton.style.opacity = '1';
         DOM.sendButton.style.cursor = 'pointer';
         DOM.input.focus();
@@ -118,27 +123,37 @@ export function showAiResponse(responseText) {
     DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
 }
 
-export function displayFileTag(fileName) {
-    DOM.fileContextArea.innerHTML = '';
-    const tagElement = document.createElement('div');
-    tagElement.className = 'file-tag';
-    
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = fileName;
-    tagElement.appendChild(nameSpan);
+// DEĞİŞİKLİK: Fonksiyon artık tek bir etiket yerine birden fazla etiket gösteriyor.
+export function displayFileTags(fileNames) {
+    DOM.fileContextArea.innerHTML = ''; // Önceki etiketleri temizle
 
-    const removeButton = document.createElement('button');
-    removeButton.className = 'remove-file-button';
-    removeButton.title = 'Dosyayı Kaldır';
-    removeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"></path></svg>`;
-    removeButton.addEventListener('click', () => {
-        if(isAiResponding) return;
-        postMessage('clearFileContext');
+    fileNames.forEach(fileName => {
+        const tagElement = document.createElement('div');
+        tagElement.className = 'file-tag';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = fileName;
+        tagElement.appendChild(nameSpan);
+
+        const removeButton = document.createElement('button');
+        removeButton.className = 'remove-file-button';
+        removeButton.title = 'Dosyayı Kaldır';
+        // YENİ: Butonun hangi dosyaya ait olduğunu belirtmek için data-attribute ekliyoruz.
+        removeButton.dataset.fileName = fileName;
+        removeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"></path></svg>`;
+        
+        // DEĞİŞİKLİK: Event listener artık 'removeFileContext' mesajı gönderiyor.
+        removeButton.addEventListener('click', (event) => {
+            if(isAiResponding) return;
+            const fileToRemove = event.currentTarget.dataset.fileName;
+            postMessage('removeFileContext', { fileName: fileToRemove });
+        });
+        
+        tagElement.appendChild(removeButton);
+        DOM.fileContextArea.appendChild(tagElement);
     });
-    
-    tagElement.appendChild(removeButton);
-    DOM.fileContextArea.appendChild(tagElement);
-    DOM.input.placeholder = `${fileName} hakkında bir talimat girin...`;
+
+    DOM.input.placeholder = `${fileNames.length} dosya hakkında bir talimat girin...`;
 }
 
 export function clearFileTag() {

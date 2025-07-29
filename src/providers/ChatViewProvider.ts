@@ -52,8 +52,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             switch (data.type) {
                 case 'askAI': {
                     const userMessage = data.payload;
-                    if (this.contextManager.uploadedFileContext) {
-                        await this.messageHandler.handleFileContextInteraction(userMessage, this.contextManager.uploadedFileContext, this._view.webview);
+                    // DEĞİŞİKLİK: Tek bir dosya yerine dosya dizisini kontrol et.
+                    if (this.contextManager.uploadedFileContexts.length > 0) {
+                        await this.messageHandler.handleFileContextInteraction(userMessage, this.contextManager.uploadedFileContexts, this._view.webview);
                     } else if (this.contextManager.activeContextText && this.contextManager.activeEditorUri && this.contextManager.activeSelection) {
                         await this.messageHandler.handleContextualModification(userMessage, this.contextManager.activeContextText, this.contextManager.activeEditorUri, this.contextManager.activeSelection, this._view.webview);
                         this.contextManager.clearAll(this._view.webview);
@@ -65,7 +66,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
                 case 'newChat': {
                     const activeConv = this.conversationManager.getActive();
-                    if (activeConv && activeConv.messages.length <= 1) break; 
+                    // Eğer mevcut sohbet zaten boşsa veya sadece sistem mesajı varsa bir şey yapma
+                    if (activeConv && activeConv.messages.length <= 1 && this.contextManager.uploadedFileContexts.length === 0) break; 
+                    
+                    // YENİ EKLENEN SATIR: Yeni sohbete başlamadan önce dosya bağlamını temizle.
+                    this.contextManager.clearAll(this._view.webview);
+
                     this.conversationManager.createNew();
                     this._view.webview.postMessage({ type: 'clearChat' });
                     break;
@@ -102,7 +108,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     await this.contextManager.setFileContext(this._view.webview); 
                     break;
                 
-                case 'clearFileContext': 
+                // YENİ: Tek bir dosyayı kaldırma isteğini işle.
+                case 'removeFileContext': 
+                    this.contextManager.removeFileContext(data.payload.fileName, this._view.webview);
+                    break;
+                
+                case 'clearFileContext': // Bu artık kullanılmayacak, removeFileContext'e bırakıldı ama acil durum için kalabilir.
                     this.contextManager.clearAll(this._view.webview); 
                     break;
                 

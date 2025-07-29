@@ -12,14 +12,15 @@ export class ContextManager {
     public activeEditorUri?: vscode.Uri;
     public activeSelection?: vscode.Selection;
     public activeContextText?: string;
-    public uploadedFileContext?: {
+    
+    public uploadedFileContexts: Array<{
         uri: vscode.Uri;
         content: string;
         fileName: string;
-    };
+    }> = [];
 
     public setEditorContext(uri: vscode.Uri, selection: vscode.Selection, text: string, webview: vscode.Webview) {
-        this.clearAll(webview, false); // Webview'e mesaj göndermeden temizle
+        this.clearAll(webview, false); 
         this.activeEditorUri = uri;
         this.activeSelection = selection;
         this.activeContextText = text;
@@ -30,15 +31,47 @@ export class ContextManager {
     }
 
     public async setFileContext(webview: vscode.Webview) {
-        const fileUriArray = await vscode.window.showOpenDialog({ canSelectMany: false, openLabel: 'Dosyayı Seç' });
-        if (fileUriArray && fileUriArray[0]) {
-            const uri = fileUriArray[0];
-            const fileBytes = await vscode.workspace.fs.readFile(uri);
-            const content = Buffer.from(fileBytes).toString('utf8');
-            const fileName = path.basename(uri.fsPath);
-            this.clearAll(webview, false); // Webview'e mesaj göndermeden temizle
-            this.uploadedFileContext = { uri, content, fileName };
-            webview.postMessage({ type: 'fileContextSet', fileName: fileName });
+        const fileUriArray = await vscode.window.showOpenDialog({ 
+            canSelectMany: true, 
+            openLabel: 'Dosyaları Seç',
+            title: 'Analiz için 5 taneye kadar dosya seçin'
+        });
+
+        if (fileUriArray && fileUriArray.length > 0) {
+            if (this.uploadedFileContexts.length + fileUriArray.length > 5) {
+                vscode.window.showErrorMessage('En fazla 5 dosya ekleyebilirsiniz.');
+                return;
+            }
+
+            // Önceki sadece dosya bağlamını temizle, seçili kodu değil.
+            this.uploadedFileContexts = [];
+            webview.postMessage({ type: 'clearContext' });
+
+
+            for (const uri of fileUriArray) {
+                if (this.uploadedFileContexts.some(f => f.uri.fsPath === uri.fsPath)) continue;
+
+                const fileBytes = await vscode.workspace.fs.readFile(uri);
+                const content = Buffer.from(fileBytes).toString('utf8');
+                const fileName = path.basename(uri.fsPath);
+                this.uploadedFileContexts.push({ uri, content, fileName });
+            }
+            
+            const fileNames = this.uploadedFileContexts.map(f => f.fileName);
+            webview.postMessage({ type: 'fileContextSet', fileNames: fileNames });
+        }
+    }
+    
+    public removeFileContext(fileNameToRemove: string, webview: vscode.Webview) {
+        this.uploadedFileContexts = this.uploadedFileContexts.filter(f => f.fileName !== fileNameToRemove);
+        
+        // DÜZELTİLEN SATIR
+        const fileNames = this.uploadedFileContexts.map(f => f.fileName);
+        
+        if (fileNames.length > 0) {
+            webview.postMessage({ type: 'fileContextSet', fileNames: fileNames });
+        } else {
+            this.clearAll(webview);
         }
     }
 
@@ -46,7 +79,7 @@ export class ContextManager {
         this.activeEditorUri = undefined;
         this.activeSelection = undefined;
         this.activeContextText = undefined;
-        this.uploadedFileContext = undefined;
+        this.uploadedFileContexts = [];
         if (notifyWebview) {
             webview.postMessage({ type: 'clearContext' });
         }

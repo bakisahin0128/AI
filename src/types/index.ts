@@ -45,6 +45,7 @@ export interface Conversation {
 export interface AiResponse {
     intent: 'answer' | 'modify';
     explanation: string;
+    fileName?: string; // YENİ: Değiştirilen dosyanın adını tutmak için eklendi.
     modifiedCode: string;
 }
 
@@ -68,5 +69,3 @@ export interface ModifyWithInputArgs {
     // [startLine, startChar, endLine, endChar]
     range: [number, number, number, number];
 }
-
-

@@ -42,7 +42,6 @@ export function initEventHandlers() {
 
 export function initMessageListener() {
     VsCode.onMessage(message => {
-        // Gelen mesaj formatı bazen `value` bazen `payload` içeriyor, ikisini de kontrol edelim.
         const data = message.payload ?? message.value;
         
         switch (message.type) {
@@ -50,8 +49,9 @@ export function initMessageListener() {
                 UI.showAiResponse(data);
                 UI.setInputEnabled(true);
                 break;
+            // DEĞİŞİKLİK: 'fileContextSet' artık bir dizi dosya adı alıyor.
             case 'fileContextSet': 
-                UI.displayFileTag(message.fileName); 
+                UI.displayFileTags(message.fileNames); 
                 break;
             case 'clearContext':
             case 'clearFileContext':
@@ -69,8 +69,8 @@ export function initMessageListener() {
             case 'loadConversation':
                 UI.loadConversation(data);
                 break;
-            case 'contextSet': // Orijinal koddaki bu durum için bir işlem ekleyelim.
-                 UI.addAiMessage(data); // Örnek olarak AI mesajı olarak ekleyebiliriz.
+            case 'contextSet': 
+                 UI.addAiMessage(data); 
                  DOM.input.placeholder = data;
                  break;
         }

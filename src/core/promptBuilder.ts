@@ -39,41 +39,48 @@ ${codeToModify}
 }
 
 /**
+ * DEĞİŞİKLİK: Fonksiyon artık tek bir dosya yerine bir dosya dizisi alıyor.
  * Creates a structured prompt for analyzing or modifying an entire file's content.
  * The prompt instructs the model to determine the user's intent ('answer' or 'modify')
  * and return a JSON object containing the result.
  *
- * @param fileName The name of the file being processed.
+ * @param files The array of files to be processed.
  * @param instruction The user's high-level instruction for the file.
- * @param fileContent The full content of the file.
  * @returns A detailed, structured prompt for the language model to generate a JSON response.
  */
-export function createFileInteractionPrompt(fileName: string, instruction: string, fileContent: string): string {
+export function createFileInteractionPrompt(files: Array<{ fileName: string, content: string }>, instruction: string): string {
+    // YENİ: Birden fazla dosyanın içeriğini tek bir string'de birleştiriyoruz.
+    const fileContents = files.map(file => `
+---
+DOSYA ADI: "${file.fileName}"
+İÇERİK:
+${file.content}
+---
+`).join('\n\n');
+
     return `
-Sen bir uzman yazılım geliştirme asistanısın. Kullanıcının talimatını ve sağlanan dosya içeriğini analiz et.
+Sen bir uzman yazılım geliştirme asistanısın. Kullanıcının talimatını ve sağlanan dosya içeriklerini analiz et. Birden fazla dosya sağlandı.
 
 GÖREVİN:
 1.  Önce kullanıcının niyetini belirle:
-    - Eğer kullanıcı soru soruyor, açıklama istiyor, analiz talep ediyor veya bir şeyi bulmasını istiyorsa (örn: "bu nedir?", "hatayı bul", "özetle"), niyet 'answer' (cevapla) olmalıdır.
-    - Eğer kullanıcı açıkça dosyayı değiştirmeyi, düzeltmeyi, ekleme yapmayı veya yeniden düzenlemeyi istiyorsa (örn: "düzelt", "ekle", "değiştir", "refactor et"), niyet 'modify' (değiştir) olmalıdır.
+    - Eğer kullanıcı soru soruyor, açıklama istiyor, karşılaştırma yapıyor veya bir şeyi bulmasını istiyorsa (örn: "bu nedir?", "hatayı bul", "özetle"), niyet 'answer' olmalıdır.
+    - Eğer kullanıcı açıkça BİR VEYA DAHA FAZLA dosyayı değiştirmeyi, düzeltmeyi, ekleme yapmayı veya yeniden düzenlemeyi istiyorsa, niyet 'modify' olmalıdır.
 
 2.  Cevabını MUTLAKA aşağıdaki JSON formatında oluştur. Başka hiçbir metin ekleme.
     
     \`\`\`json
     {
       "intent": "answer" | "modify",
-      "explanation": "Kullanıcıya gösterilecek detaylı ve Markdown formatında açıklama metni. Cevabını veya yaptığın değişikliği burada anlat.",
-      "modifiedCode": "Eğer niyet 'modify' ise, dosyanın baştan sona değiştirilmiş tam içeriğini buraya yaz. Eğer niyet 'answer' ise bu alanı boş bir string olarak bırak (\\\"\\\")."
+      "explanation": "Kullanıcıya gösterilecek detaylı ve Markdown formatında açıklama metni. Cevabını veya yaptığın değişikliği burada anlat. Eğer değişiklik yaptıysan, HANGİ DOSYAYI DEĞİŞTİRDİĞİNİ bu açıklamada belirt.",
+      "fileName": "Eğer niyet 'modify' ise, DEĞİŞİKLİK YAPILAN dosyanın adını buraya yaz. Eğer niyet 'answer' ise bu alanı boş bir string olarak bırak (\\\"\\\").",
+      "modifiedCode": "Eğer niyet 'modify' ise, DEĞİŞTİRDİĞİN dosyanın baştan sona değiştirilmiş tam içeriğini buraya yaz. Sadece tek bir dosyanın içeriğini döndür. Eğer niyet 'answer' ise bu alanı boş bir string olarak bırak (\\\"\\\")."
     }
     \`\`\`
 
 KULLANICI BİLGİLERİ:
-- Dosya Adı: "${fileName}"
 - Kullanıcı Talimatı: "${instruction}"
 
-DOSYANIN MEVCUT İÇERİĞİ:
----
-${fileContent}
----
+DOSYALARIN MEVCUT İÇERİĞİ:
+${fileContents}
 `;
 }
