@@ -1,0 +1,95 @@
+/* ==========================================================================
+   CHAT CONTAINER & MESSAGE (SOHBET ALANI VE MESAJ) STİLLERİ
+   ========================================================================== */
+
+#chat-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 15px 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.message {
+    max-width: 90%;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+.ai-message { align-self: flex-start; }
+.user-message { align-self: flex-end; flex-direction: row-reverse; }
+
+.avatar-wrapper {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    margin-top: 4px;
+}
+.avatar-icon {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    filter: invert(1);
+}
+.user-message .avatar-wrapper {
+    width: 32px;
+    height: 32px;
+}
+.message > div:not(.avatar-wrapper) {
+    width: 100%;
+    line-height: 1.6;
+}
+
+/* --- Markdown & Code Blocks --- */
+.ai-message p { margin: 0 0 10px 0; }
+.ai-message p:last-child { margin-bottom: 0; }
+.ai-message ul { margin: 10px 0; padding-left: 25px; }
+
+code:not(.hljs) {
+    background-color: var(--vscode-textBlockQuote-background);
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+}
+
+.code-block-container {
+    position: relative;
+    margin: 10px 0;
+}
+
+pre {
+    margin: 0;
+    background-color: var(--vscode-textBlockQuote-background);
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+pre code.hljs {
+    padding: 15px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    display: block;
+}
+
+.copy-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background-color: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+    border: 1px solid var(--vscode-button-border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.code-block-container:hover .copy-button { opacity: 1; }
+.copy-button:active { background-color: var(--vscode-button-secondaryHoverBackground); }

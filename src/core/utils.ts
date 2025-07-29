@@ -1,24 +1,35 @@
-/**
- * Cleans Markdown code blocks (e.g., ```python ... ```) from a string
- * and returns only the pure code.
- * @param rawResponse The raw string response from the language model.
- * @returns The cleaned and trimmed code content.
- */
+/* ==========================================================================
+   DOSYA 5: src/core/utils.ts (GÜNCELLENMİŞ DOSYA)
+   
+   SORUMLULUK: Proje genelinde kullanılacak yardımcı fonksiyonları barındırır.
+   ========================================================================== */
+
+// ... cleanLLMCodeBlock ve cleanLLMJsonBlock fonksiyonları burada kalacak ...
+
 export function cleanLLMCodeBlock(rawResponse: string): string {
-    // This regex finds and removes the code block start (with or without language)
-    // and end fences.
     const cleaned = rawResponse.replace(/^```(?:\w+)?\s*\n|```\s*$/g, '');
     return cleaned.trim();
 }
 
-/**
- * Finds and extracts the content of a JSON Markdown block from a raw string,
- * preparing it for parsing.
- * @param rawResponse The raw string response from the language model.
- * @returns The cleaned JSON string content.
- */
 export function cleanLLMJsonBlock(rawResponse: string): string {
     const jsonMatch = rawResponse.match(/```json\s*([\s\S]*?)\s*```/);
     const potentialJson = jsonMatch ? jsonMatch[1] : rawResponse;
     return potentialJson.trim();
+}
+
+// YENİ EKLENEN FONKSİYONLAR
+export function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+export function getNonce() {
+    let text = '';
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    for (let i = 0; i < 32; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
 }

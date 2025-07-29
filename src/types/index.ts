@@ -30,6 +30,15 @@ export interface ChatMessage {
     content: string;
 }
 
+// YENİ EKLENDİ: Tek bir konuşma oturumunu temsil eder.
+export interface Conversation {
+    id: string; // Her konuşma için benzersiz ID
+    timestamp: number; // Sıralama için oluşturulma zamanı
+    title: string; // Konuşma başlığı (örn: ilk kullanıcı mesajı)
+    messages: ChatMessage[]; // O konuşmaya ait mesajlar
+}
+
+
 /** * Defines the expected JSON response structure from the LLM after file analysis/modification.
  * (Used in ChatViewProvider)
  */
@@ -59,3 +68,5 @@ export interface ModifyWithInputArgs {
     // [startLine, startChar, endLine, endChar]
     range: [number, number, number, number];
 }
+
+

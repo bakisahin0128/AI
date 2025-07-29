@@ -1,0 +1,53 @@
+/* ==========================================================================
+   HEADER (BAŞLIK) BÖLÜMÜ STİLLERİ
+   ========================================================================== */
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--vscode-widget-border);
+    flex-shrink: 0;
+}
+
+.header-logo-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.header-logo {
+    width: 24px;
+    height: 24px;
+    filter: invert(1);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--vscode-icon-foreground);
+}
+
+.icon-button:hover {
+    background-color: var(--vscode-toolbar-hoverBackground);
+}
+
+.icon-button svg {
+    width: 16px;
+    height: 16px;
+}

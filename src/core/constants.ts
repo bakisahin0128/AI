@@ -30,7 +30,8 @@ export const SETTINGS_KEYS = {
     vllmBaseUrl: 'vllm.baseUrl',
     vllmModelName: 'vllm.modelName',
     // Gemini
-    geminiApiKey: 'gemini.apiKey'
+    geminiApiKey: 'gemini.apiKey',
+    conversationHistoryLimit: 'chat.conversationHistoryLimit' 
 };
 
 // --- Gemini Model Adı ---

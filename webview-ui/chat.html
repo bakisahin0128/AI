@@ -2,11 +2,13 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
+
+    <!-- GÜNCELLEME: İçerik Güvenlik Politikası (CSP) eklendi. Bu, CSS ve script'lerin güvenli bir şekilde yüklenmesini sağlar. -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}} https://cdnjs.cloudflare.com; script-src 'nonce-{{nonce}}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src {{cspSource}} https:;">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <link href="{{chat_css_uri}}" rel="stylesheet">
-    
     <title>İvme Chat</title>
 </head>
 <body>
@@ -15,22 +17,32 @@
             <img src="{{logo_uri}}" alt="Logo" class="header-logo"/>
             <span>İvme</span>
         </div>
-        <button id="settings-button" class="icon-button" title="Ayarlar">
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
-                <path fill-rule="evenodd" d="M6.955.057a.75.75 0 0 1 .457.873 6.945 6.945 0 0 0-.284 2.22 1.5 1.5 0 0 1-2.924 1.018.75.75 0 0 1 .331-1.026A5.445 5.445 0 0 1 8.045 1.5a.75.75 0 0 1 1.028-.356A5.445 5.445 0 0 1 12.5 4.545a.75.75 0 0 1-1.026.331 1.5 1.5 0 0 1 1.018-2.924 6.945 6.945 0 0 0 2.22-.284.75.75 0 0 1 .873.457l.002.004a7.002 7.002 0 0 1 2.348 9.531.75.75 0 0 1-.77.925 1.5 1.5 0 0 1-2.618-1.536 5.502 5.502 0 0 0-7.964-7.964A1.5 1.5 0 0 1 4.01 2.618a.75.75 0 0 1-.925-.77A7.002 7.002 0 0 1 .737.51l.004-.002A.75.75 0 0 1 .993.04L1 .035a6.954 6.954 0 0 1 5.955.022ZM1.5 8.045a5.445 5.445 0 0 0 3.045 3.455.75.75 0 0 1 .331 1.026 1.5 1.5 0 0 1-2.924-1.018 6.945 6.945 0 0 1-.284-2.22.75.75 0 0 1 .873-.457A6.954 6.954 0 0 1 8 15.01a6.954 6.954 0 0 1 5.955-5.955.75.75 0 0 1 .873.457 6.945 6.945 0 0 1-.284 2.22 1.5 1.5 0 0 1-2.924 1.018.75.75 0 0 1 .331-1.026A5.445 5.445 0 0 0 8.5 9.455a.75.75 0 0 1-1.026.331 1.5 1.5 0 0 1 1.018-2.924 6.945 6.945 0 0 1 2.22-.284.75.75 0 0 1 .457-.873 7.002 7.002 0 0 0-9.53-9.531.75.75 0 0 1 .924-.77 1.5 1.5 0 0 1-1.536 2.618 5.502 5.502 0 0 1-7.964 7.964 1.5 1.5 0 0 1 2.618 1.536.75.75 0 0 1-.77.925A7.002 7.002 0 0 0 1.5 8.045Z" />
-            </svg>
-        </button>
+        <div class="header-actions">
+            <button id="history-button" class="icon-button" title="Konuşma Geçmişi">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 2.5a.5.5 0 0 0 0 1h13a.5.5 0 0 0 0-1h-13Zm0 5a.5.5 0 0 0 0 1h13a.5.5 0 0 0 0-1h-13Zm0 5a.5.5 0 0 0 0 1h13a.5.5 0 0 0 0-1h-13Z"/></svg>
+            </button>
+            <button id="new-chat-button" class="icon-button" title="Yeni Konuşma">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z"/></svg>
+            </button>
+            <button id="settings-button" class="icon-button" title="Ayarlar">
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor"><path d="M10.5 5a.5.5 0 0 0-1 0v.784a3.003 3.003 0 0 0-4.993 0V5a.5.5 0 0 0-1 0v.784a3.003 3.003 0 0 0-1.28 1.483.5.5 0 0 0 .866.502A2.002 2.002 0 0 1 8 6.5a2.002 2.002 0 0 1 3.907 1.269.5.5 0 0 0 .866-.502A3.003 3.003 0 0 0 10.5 5.784V5Zm1.28 5.517a3.003 3.003 0 0 0-1.28-1.483.5.5 0 0 0-.866.502A2.002 2.002 0 0 1 8 10.8a2.002 2.002 0 0 1-3.907-1.269.5.5 0 0 0-.866-.502A3.003 3.003 0 0 0 2.5 9.216V11a.5.5 0 0 0 1 0v-.784a3.003 3.003 0 0 0 4.993 0V11a.5.5 0 0 0 1 0v-.784a3.003 3.003 0 0 0 1.28-1.483Z"/></svg>
+            </button>
+        </div>
     </header>
 
-    <div id="chat-container" 
-         data-ai-icon-uri="{{ai_icon_uri}}" 
-         data-user-icon-uri="{{user_icon_uri}}">
-        <div id="welcome-container">
+    <div id="history-panel" class="history-panel hidden">
+        <div id="history-list-container" class="history-list-container"></div>
+    </div>
+
+    <div id="welcome-container">
+        <div class="welcome-box">
             <img src="{{logo_uri}}" alt="İvme Logo" id="welcome-logo"/>
             <h1>İvme</h1>
             <p>Kod geliştirme ve analiz süreçlerinizi yapay zeka ile hızlandırın.</p>
         </div>
     </div>
+
+    <div id="chat-container" class="hidden" data-ai-icon-uri="{{ai_icon_uri}}" data-user-icon-uri="{{user_icon_uri}}"></div>
 
     <div id="file-context-area"></div>
 
@@ -48,45 +60,31 @@
     
     <div id="settings-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <h2>Ayarlar</h2>
-            <form id="settings-form">
-                <div class="form-group">
-                    <label for="service-select">Aktif Servis</label>
-                    <select id="service-select">
-                        <option value="vLLM">vLLM</option>
-                        <option value="Gemini">Gemini</option>
-                    </select>
-                </div>
-
-                <div id="vllm-settings">
-                    <div class="form-group">
-                        <label for="vllm-url">vLLM Sunucu Adresi</label>
-                        <input type="text" id="vllm-url" placeholder="http://localhost:8000/v1">
+            <div class="modal-sidebar">
+                <div class="modal-header"><h2>Ayarlar</h2></div>
+                <ul class="modal-nav">
+                    <li><button class="nav-button active" data-target="pane-services">Servisler</button></li>
+                    <li><button class="nav-button" data-target="pane-general">Genel</button></li>
+                </ul>
+            </div>
+            <div class="modal-main-content">
+                <form id="settings-form">
+                    <div id="pane-services" class="settings-pane active">
+                        <div class="form-group"><label for="service-select">Aktif Servis</label><select id="service-select"><option value="vLLM">vLLM</option><option value="Gemini">Gemini</option></select></div>
+                        <div id="vllm-settings"><div class="form-group"><label for="vllm-url">vLLM Sunucu Adresi</label><input type="text" id="vllm-url" placeholder="http://localhost:8000/v1"></div><div class="form-group"><label for="vllm-model">vLLM Model Adı</label><input type="text" id="vllm-model" placeholder="Qwen/Qwen1.5-7B-Chat"></div></div>
+                        <div id="gemini-settings" class="hidden"><div class="form-group"><label for="gemini-key">Gemini API Anahtarı</label><input type="password" id="gemini-key" placeholder="API Anahtarınızı girin"></div></div>
                     </div>
-                    <div class="form-group">
-                        <label for="vllm-model">vLLM Model Adı</label>
-                        <input type="text" id="vllm-model" placeholder="Qwen/Qwen1.5-7B-Chat">
-                    </div>
-                </div>
-
-                <div id="gemini-settings" class="hidden">
-                    <div class="form-group">
-                        <label for="gemini-key">Gemini API Anahtarı</label>
-                        <input type="password" id="gemini-key" placeholder="API Anahtarınızı girin">
-                    </div>
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" id="cancel-settings-button" class="secondary-button">İptal</button>
-                    <button type="submit" class="primary-button">Kaydet</button>
-                </div>
-            </form>
+                    <div id="pane-general" class="settings-pane"><div class="form-group"><label for="history-limit">Konuşma Geçmişi Limiti</label><input type="number" id="history-limit" min="0" placeholder="2"><p class="form-group-description">Sohbete gönderilecek önceki mesaj sayısı. Modelin bağlamı hatırlaması için kullanılır.</p></div></div>
+                    <div class="modal-actions"><button type="button" id="cancel-settings-button" class="secondary-button">İptal</button><button type="submit" class="primary-button">Kaydet</button></div>
+                </form>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="{{chat_js_uri}}"></script>
-
+    
+    <!-- GÜNCELLEME: 'nonce' değeri script'in çalışmasına izin vermek için eklendi. -->
+    <script type="module" src="{{chat_js_uri}}" nonce="{{nonce}}"></script>
 </body>
 </html>
