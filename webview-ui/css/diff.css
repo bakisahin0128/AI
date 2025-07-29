@@ -45,7 +45,6 @@
     background-color: var(--vscode-toolbar-hoverBackground);
 }
 
-/* GÜNCELLEME: Artık tek bir panelimiz var */
 .diff-view {
     flex-grow: 1; /* Kalan alanı kapla */
     min-height: 0; /* Flexbox'ın taşmasını engelle */
@@ -69,17 +68,24 @@
     font-size: 13px;
     line-height: 1.5;
     display: block;
+    white-space: pre-wrap; /* Satırların taşmasını ve alt satıra geçmesini sağlar */
+    word-break: break-all;
 }
 
-/* YENİ: highlight.js'in eklediği diff sınıfları için stiller */
-.hljs-deletion {
-    background-color: rgba(220, 53, 69, 0.15);
-    display: block; /* Satırın tamamını kaplaması için */
+/* YENİ: Kendi kelime bazlı diff stillerimiz */
+.diff-added {
+    background-color: rgba(40, 167, 69, 0.25); /* Yeşil arka plan */
+    border-radius: 3px;
 }
 
-.hljs-addition {
-    background-color: rgba(40, 167, 69, 0.15);
-    display: block; /* Satırın tamamını kaplaması için */
+.diff-removed {
+    background-color: rgba(220, 53, 69, 0.25); /* Kırmızı arka plan */
+    text-decoration: line-through; /* Üstü çizili metin */
+    border-radius: 3px;
+}
+
+.diff-unchanged {
+    opacity: 0.7; /* Değişmeyen kısımları biraz soluk gösterelim */
 }
 
 .diff-actions {

@@ -1,7 +1,7 @@
 /* ==========================================================================
    ARAYÜZ (UI) YÖNETİM MODÜLÜ
    DOM'u güncelleyen, mesajları ekleyen/silen tüm fonksiyonları içerir.
-   YENİ: Diff görünümünü yönetir ve satır-satır fark oluşturur.
+   YENİ: Diff görünümünü yönetir ve kelime bazlı fark oluşturur.
    ========================================================================== */
 
 import * as DOM from './dom.js';
@@ -183,36 +183,28 @@ export function loadConversation(messages) {
 // --- GÜNCELLENMİŞ Diff Fonksiyonları ---
 
 /**
- * İki metin arasındaki satır bazlı farkları oluşturan basit bir fonksiyon.
+ * İki metin arasındaki kelime bazlı farkları bularak HTML çıktısı üretir.
  * @param {string} oldText - Eski metin.
  * @param {string} newText - Yeni metin.
- * @returns {string} Diff formatında birleştirilmiş metin.
+ * @returns {string} Farkları içeren HTML string'i.
  */
-function createUnifiedDiff(oldText, newText) {
-    const oldLines = oldText.split(/\r?\n/);
-    const newLines = newText.split(/\r?\n/);
-    const maxLen = Math.max(oldLines.length, newLines.length);
-    const diffLines = [];
+function createSmartDiffHtml(oldText, newText) {
+    const diff = Diff.diffWords(oldText, newText);
+    let html = '';
+    diff.forEach(part => {
+        // Değişikliğin türüne göre metni bir <span> içine alıp sınıf atayalım
+        const colorClass = part.added ? 'diff-added' :
+                           part.removed ? 'diff-removed' : 'diff-unchanged';
+        // Boşlukları ve yeni satırları HTML'de görünecek şekilde değiştirelim
+        const value = part.value
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
 
-    for (let i = 0; i < maxLen; i++) {
-        const oldLine = oldLines[i];
-        const newLine = newLines[i];
-
-        if (oldLine !== undefined && oldLine !== newLine) {
-            if(oldLine.trim() !== '') {
-                 diffLines.push(`- ${oldLine}`);
-            }
-        }
-        if (newLine !== undefined && oldLine !== newLine) {
-            if(newLine.trim() !== '') {
-                 diffLines.push(`+ ${newLine}`);
-            }
-        }
-        if (oldLine !== undefined && oldLine === newLine) {
-            diffLines.push(`  ${oldLine}`);
-        }
-    }
-    return diffLines.join('\n');
+        html += `<span class="${colorClass}">${value}</span>`;
+    });
+    return html;
 }
 
 /**
@@ -225,13 +217,11 @@ export function showDiffView(diffData) {
        loadingElement.remove();
     }
     
-    const unifiedDiff = createUnifiedDiff(diffData.originalCode, diffData.modifiedCode);
+    // YENİ: Akıllı diff fonksiyonumuzu çağırıyoruz.
+    const smartDiffHtml = createSmartDiffHtml(diffData.originalCode, diffData.modifiedCode);
     
-    // GÜNCELLEME: Tek bir kod bloğunu dolduruyoruz.
-    DOM.unifiedDiffCodeBlock.textContent = unifiedDiff;
-    
-    // highlight.js'in yeni kodları 'diff' diline göre renklendirmesini sağla
-    hljs.highlightElement(DOM.unifiedDiffCodeBlock);
+    // GÜNCELLEME: Artık `textContent` yerine `innerHTML` kullanıyoruz.
+    DOM.unifiedDiffCodeBlock.innerHTML = smartDiffHtml;
 
     DOM.diffContainer.classList.remove('hidden');
     isDiffViewActive = true;
@@ -243,8 +233,8 @@ export function showDiffView(diffData) {
  */
 export function hideDiffView() {
     DOM.diffContainer.classList.add('hidden');
-    // GÜNCELLEME: Tek kod bloğunu temizliyoruz.
-    DOM.unifiedDiffCodeBlock.textContent = '';
+    // GÜNCELLEME: Kod bloğunu temizliyoruz.
+    DOM.unifiedDiffCodeBlock.innerHTML = '';
     isDiffViewActive = false;
     setInputEnabled(true);
 }

@@ -40,48 +40,92 @@ YENİ HALİ:
 ${modifiedCode}
 ---
 
-Şimdi, bu iki versiyon arasındaki değişiklikleri yukarıdaki örnek formata birebir uyarak, GİRİŞ CÜMLESİ OLMADAN açıkla.
+Şimdi, bu iki versiyon arasındaki değişiklikleri yukarıdaki örnek formata birebir uyarak, GİRİŞ CÜMLEMESİ OLMADAN açıkla.
 `;
 }
 
-
 /**
- * GÜNCELLENMİŞ NİYET ANALİZİ PROMPT'U
- * LLM'den, kullanıcının niyetini ('answer' veya 'modify') belirlemesini,
- * bir açıklama üretmesini ve gerekirse hedef dosya adını vermesini ister.
+ * Dosya bazlı etkileşimler için niyet analizi yapar.
  */
-export function createFileInteractionAnalysisPrompt(files: Array<{ fileName: string, content: string }>, instruction: string): string {
+export function createFileInteractionAnalysisPrompt(files: Array<{ fileName:string, content:string }>, instruction: string): string {
     const fileContents = files.map(file => `
----
-DOSYA ADI: "${file.fileName}"
-İÇERİK:
+--- DOSYA ADI: "${file.fileName}" ---
 ${file.content}
 ---
 `).join('\n\n');
 
     return `
-Sen bir uzman yazılım geliştirme asistanısın. Kullanıcının talimatını ve sağlanan dosya içeriklerini analiz et.
+Sen, birincil görevi kullanıcının talebini yerine getirmek olan bir yazılım asistanısın.
 
 GÖREVİN:
-1.  Kullanıcının niyetini dikkatlice belirle:
-    - Eğer kullanıcı AÇIKÇA "değiştir", "düzelt", "ekle", "sil", "yeniden yaz", "refactor et", "optimize et", "güncelle" gibi bir EYLEM belirten bir komut veriyorsa, niyet MUTLAKA 'modify' olmalıdır.
-    - Diğer tüm durumlarda (örneğin: "bu kod ne yapar?", "hatayı bul", "özetle", "karşılaştır") niyet 'answer' olmalıdır.
+Kullanıcının talimatını ve verilen dosya(lar)ı analiz ederek aşağıdaki iki niyetten birini seç ve cevabını MUTLAKA JSON formatında oluştur:
 
-2.  Cevabını MUTLAKA aşağıdaki özel formatta oluştur. Başka hiçbir metin ekleme.
+1.  **Niyet: "answer"**
+    - **Koşul:** Eğer kullanıcı bir soru soruyor, açıklama istiyor, hata bulmasını istiyor veya kod hakkında bir fikir talep ediyorsa bu niyeti seç.
+    - **JSON Çıktısı:**
+      {
+        "intent": "answer",
+        "explanation": "[KULLANICININ SORUSUNA DOĞRUDAN VE TAM CEVAP BURAYA GELECEK. Cevabını Markdown formatında, GEREKTİĞİNDE maddeler ve kod blokları kullanarak detaylı bir şekilde oluştur.]"
+      }
 
-FORMAT:
-INTENT: [Buraya 'answer' veya 'modify' yaz]
-FILENAME: [Eğer niyet 'modify' ise, değişiklik yapılacak dosyanın adını buraya yaz. 'answer' ise bu satırı boş bırak.]
-EXPLANATION:
-[Kullanıcının sorusuna Markdown formatında bir cevap veya yapılacak değişikliğin kısa bir özeti buraya gelecek.]
+2.  **Niyet: "modify"**
+    - **Koşul:** Eğer kullanıcı AÇIKÇA kodun değiştirilmesini, yeniden yazılmasını, bir şey eklenmesini/silinmesini veya refactor edilmesini istiyorsa bu niyeti seç.
+    - **JSON Çıktısı:**
+      {
+        "intent": "modify",
+        "fileName": "[DEĞİŞTİRİLECEK TEK BİR DOSYANIN ADI]",
+        "explanation": "[YAPILACAK DEĞİŞİKLİĞİ TEK CÜMLEDE ÖZETLE]"
+      }
 
-KULLANICI BİLGİLERİ:
-- Kullanıcı Talimatı: "${instruction}"
+SAKIN UNUTMA:
+- Cevabın SADECE ve SADECE JSON içermelidir. Başka hiçbir metin ekleme.
+- Eğer birden fazla dosya varsa ve kullanıcı bir değişiklik istiyorsa, talimata en uygun TEK bir dosyayı seç.
 
-DOSYALARIN MEVCUT İÇERİĞİ:
+KULLANICI TALİMATI: "${instruction}"
+
+DOSYA(LAR):
 ${fileContents}
 `;
 }
+
+/**
+ * Seçili kod bazlı etkileşimler için niyet analizi yapar.
+ */
+export function createSelectionInteractionAnalysisPrompt(selectedCode: string, instruction: string): string {
+    return `
+Sen, birincil görevi kullanıcının talebini yerine getirmek olan bir yazılım asistanısın.
+
+GÖREVİN:
+Kullanıcının talimatını ve verilen seçili kodu analiz ederek aşağıdaki iki niyetten birini seç ve cevabını MUTLAKA JSON formatında oluştur:
+
+1.  **Niyet: "answer"**
+    - **Koşul:** Eğer kullanıcı seçili kod hakkında bir soru soruyor, açıklama istiyor veya hata bulmasını istiyorsa bu niyeti seç.
+    - **JSON Çıktısı:**
+      {
+        "intent": "answer",
+        "explanation": "[SEÇİLİ KOD HAKKINDAKİ SORUYA DOĞRUDAN VE TAM CEVAP BURAYA GELECEK. Cevabını Markdown formatında, GEREKTİĞİNDE maddeler ve kod blokları kullanarak detaylı bir şekilde oluştur.]"
+      }
+
+2.  **Niyet: "modify"**
+    - **Koşul:** Eğer kullanıcı AÇIKÇA seçili kodun değiştirilmesini, yeniden yazılmasını veya refactor edilmesini istiyorsa bu niyeti seç.
+    - **JSON Çıktısı:**
+      {
+        "intent": "modify",
+        "explanation": "[YAPILACAK DEĞİŞİKLİĞİ TEK CÜMLEDE ÖZETLE]"
+      }
+
+SAKIN UNUTMA:
+- Cevabın SADECE ve SADECE JSON içermelidir. Başka hiçbir metin ekleme.
+
+KULLANICI TALİMATI: "${instruction}"
+
+SEÇİLİ KOD:
+---
+${selectedCode}
+---
+`;
+}
+
 
 export function createFixErrorPrompt(errorMessage: string, lineNumber: number, fullCode: string): string {
     return `Aşağıdaki Python kodunda belirtilen hatayı düzelt. Sadece ve sadece, başka hiçbir açıklama veya yorum eklemeden, düzeltilmiş Python kodunun tamamını yanıt olarak ver.

@@ -2,17 +2,14 @@
    DOSYA 2: src/features/MessageHandler.ts (NİHAİ SÜRÜM)
    
    SORUMLULUK: Webview'den gelen 'askAI' gibi ana komutları işler.
-   API çağrılarını yapar ve VS Code editöründe değişiklikleri uygular.
-   YENİ: Dosya etkileşiminde önce niyeti belirler (soru/değişiklik) ve akışı
-   buna göre yönlendirir.
+   YENİ: API'den gelen detaylı hata mesajlarını doğrudan kullanıcıya gösterir.
    ========================================================================== */
 
 import * as vscode from 'vscode';
 import { ApiServiceManager } from '../services/ApiServiceManager';
 import { ConversationManager } from './ConversationManager';
-// YENİ: Güncellenmiş tüm prompt'ları import ediyoruz.
-import { createModificationPrompt, createExplanationPrompt, createFileInteractionAnalysisPrompt } from '../core/promptBuilder';
-import { cleanLLMCodeBlock } from '../core/utils';
+import { createModificationPrompt, createExplanationPrompt, createFileInteractionAnalysisPrompt, createSelectionInteractionAnalysisPrompt } from '../core/promptBuilder';
+import { cleanLLMCodeBlock, cleanLLMJsonBlock } from '../core/utils';
 import { ChatMessage, DiffData, ApproveChangeArgs } from '../types/index';
 import { EXTENSION_ID, SETTINGS_KEYS, UI_MESSAGES, API_SERVICES } from '../core/constants';
 
@@ -44,66 +41,54 @@ export class MessageHandler {
         } catch (error: any) {
             console.error("Chat API Error:", error);
             this.conversationManager.removeLastMessage();
-            webview.postMessage({ type: 'addResponse', payload: this.getErrorMessage() });
+            // GÜNCELLENDİ: Detaylı hata mesajını göster.
+            const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
+            webview.postMessage({ type: 'addResponse', payload: `**Hata:** ${errorMessage}` });
         }
     }
 
-    // --- TAMAMEN YENİLENEN FONKSİYON ---
     public async handleFileContextInteraction(instruction: string, contexts: Array<{ uri: vscode.Uri; content: string; fileName: string; }>, webview: vscode.Webview) {
         this.conversationManager.addMessage('user', instruction);
-        
+        let analysisResponseRaw = '';
+
         try {
-            // 1. AŞAMA: NİYET ANALİZİ
             const analysisPrompt = createFileInteractionAnalysisPrompt(contexts, instruction);
-            const analysisResponse = await this.apiManager.generateContent(analysisPrompt);
+            analysisResponseRaw = await this.apiManager.generateContent(analysisPrompt);
 
-            // Analiz çıktısını işle (INTENT, FILENAME, EXPLANATION'ı ayır)
-            const intentMatch = analysisResponse.match(/^INTENT:\s*(.*)/m);
-            const fileNameMatch = analysisResponse.match(/^FILENAME:\s*(.*)/m);
-            const explanationMatch = analysisResponse.match(/EXPLANATION:\s*([\s\S]*)/m);
+            const cleanedJsonString = cleanLLMJsonBlock(analysisResponseRaw);
+            const analysisResult = JSON.parse(cleanedJsonString);
 
-            if (!intentMatch || !explanationMatch) {
-                throw new Error('Modelden beklenen formatta analiz yanıtı alınamadı.');
+            const { intent, fileName, explanation } = analysisResult;
+
+            if (!intent || !explanation) {
+                throw new Error('Modelden beklenen formatta JSON yanıtı alınamadı: "intent" veya "explanation" eksik.');
             }
 
-            const intent = intentMatch[1].trim();
-            const explanation = explanationMatch[1].trim();
-
-            // 2. AŞAMA: DALLANMA
             if (intent === 'answer') {
-                // Eğer niyet sadece soruya cevap vermekse, açıklamayı göster ve bitir.
                 this.conversationManager.addMessage('assistant', explanation);
                 webview.postMessage({ type: 'addResponse', payload: explanation });
-                return; // Süreci burada sonlandır.
+                return;
             }
 
-            // Eğer niyet 'modify' ise, kod değiştirme akışına devam et.
             if (intent === 'modify') {
-                const targetFileName = fileNameMatch ? fileNameMatch[1].trim() : '';
-                const contextToModify = contexts.find(c => c.fileName === targetFileName);
+                const contextToModify = contexts.find(c => c.fileName === fileName);
 
                 if (!contextToModify) {
-                    const errorMsg = `**Hata:** Model, mevcut olmayan bir dosyayı (${targetFileName}) değiştirmeye çalıştı veya bir dosya adı belirtmedi.`;
+                    const errorMsg = `**Hata:** Model, mevcut olmayan bir dosyayı (${fileName || 'belirtilmemiş'}) değiştirmeye çalıştı.`;
                     this.conversationManager.addMessage('assistant', errorMsg);
                     webview.postMessage({ type: 'addResponse', payload: errorMsg });
                     return;
                 }
 
-                // 2a. KODU DEĞİŞTİR
+                // ÖNCE KODU DEĞİŞTİR
                 const modificationPrompt = createModificationPrompt(instruction, contextToModify.content);
                 const modifiedCodeResponse = await this.apiManager.generateContent(modificationPrompt);
                 const cleanedCode = cleanLLMCodeBlock(modifiedCodeResponse);
-
-                // 2b. AÇIKLAMA ÜRET
-                const finalExplanationPrompt = createExplanationPrompt(contextToModify.content, cleanedCode);
-                const finalExplanation = await this.apiManager.generateChatContent([
-                    { role: 'user', content: finalExplanationPrompt }
-                ]);
                 
-                this.conversationManager.addMessage('assistant', finalExplanation);
-                webview.postMessage({ type: 'addResponse', payload: finalExplanation });
-
-                // 2c. ONAYA GÖNDER
+                // ŞİMDİ AÇIKLAMAYI VE FARKI AYNI ANDA GÖNDER
+                this.conversationManager.addMessage('assistant', explanation);
+                webview.postMessage({ type: 'addResponse', payload: explanation });
+                
                 const diffData: DiffData = {
                     originalCode: contextToModify.content,
                     modifiedCode: cleanedCode,
@@ -118,35 +103,77 @@ export class MessageHandler {
         } catch (error: any) {
             console.error("File Interaction API Error:", error);
             this.conversationManager.removeLastMessage();
-            webview.postMessage({ type: 'addResponse', payload: this.getErrorMessage() });
+
+            // GÜNCELLENDİ: Hata yönetimini basitleştir ve detaylı hata göster.
+            const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
+
+            if (errorMessage.includes('JSON') && analysisResponseRaw) {
+                console.log("JSON parsing failed. Falling back to direct answer.");
+                this.conversationManager.addMessage('assistant', analysisResponseRaw);
+                webview.postMessage({ type: 'addResponse', payload: analysisResponseRaw });
+            } else {
+                webview.postMessage({ type: 'addResponse', payload: `**Hata:** ${errorMessage}` });
+            }
         }
     }
 
     public async handleContextualModification(instruction: string, codeToModify: string, uri: vscode.Uri, selection: vscode.Selection, webview: vscode.Webview) {
-        // Bu fonksiyon 'modify' niyetinde olduğu için doğrudan kod değiştirme akışını kullanır.
-        // Bu yüzden "önce kod, sonra açıklama" mantığı burada doğru çalışır.
         this.conversationManager.addMessage('user', instruction);
+        let analysisResponseRaw = '';
+        
         try {
-            const modifiedCode = await this.apiManager.generateContent(createModificationPrompt(instruction, codeToModify));
-            const cleanedCode = cleanLLMCodeBlock(modifiedCode);
-            
-            const explanation = await this.apiManager.generateChatContent([{ role: 'user', content: createExplanationPrompt(codeToModify, cleanedCode) }]);
-            this.conversationManager.addMessage('assistant', explanation);
-            webview.postMessage({ type: 'addResponse', payload: explanation });
+            const analysisPrompt = createSelectionInteractionAnalysisPrompt(codeToModify, instruction);
+            analysisResponseRaw = await this.apiManager.generateContent(analysisPrompt);
 
-            const diffData: DiffData = {
-                originalCode: codeToModify,
-                modifiedCode: cleanedCode,
-                context: {
-                    type: 'selection',
-                    selection: { uri: uri.toString(), range: [selection.start.line, selection.start.character, selection.end.line, selection.end.character] }
-                }
-            };
-            webview.postMessage({ type: 'showDiff', payload: diffData });
+            const cleanedJsonString = cleanLLMJsonBlock(analysisResponseRaw);
+            const analysisResult = JSON.parse(cleanedJsonString);
+
+            const { intent, explanation } = analysisResult;
+
+            if (!intent || !explanation) {
+                throw new Error('Modelden beklenen formatta JSON yanıtı alınamadı: "intent" veya "explanation" eksik.');
+            }
+
+            if (intent === 'answer') {
+                this.conversationManager.addMessage('assistant', explanation);
+                webview.postMessage({ type: 'addResponse', payload: explanation });
+                return;
+            }
+            
+            if (intent === 'modify') {
+                // ÖNCE KODU DEĞİŞTİR
+                const modificationPrompt = createModificationPrompt(instruction, codeToModify);
+                const modifiedCodeResponse = await this.apiManager.generateContent(modificationPrompt);
+                const cleanedCode = cleanLLMCodeBlock(modifiedCodeResponse);
+
+                // ŞİMDİ AÇIKLAMAYI VE FARKI AYNI ANDA GÖNDER
+                this.conversationManager.addMessage('assistant', explanation);
+                webview.postMessage({ type: 'addResponse', payload: explanation });
+
+                const diffData: DiffData = {
+                    originalCode: codeToModify,
+                    modifiedCode: cleanedCode,
+                    context: {
+                        type: 'selection',
+                        selection: { uri: uri.toString(), range: [selection.start.line, selection.start.character, selection.end.line, selection.end.character] }
+                    }
+                };
+                webview.postMessage({ type: 'showDiff', payload: diffData });
+            }
         } catch (error: any) {
             console.error("Contextual Modification API Error:", error);
             this.conversationManager.removeLastMessage();
-            webview.postMessage({ type: 'addResponse', payload: this.getErrorMessage() });
+            
+            // GÜNCELLENDİ: Hata yönetimini basitleştir ve detaylı hata göster.
+            const errorMessage = error instanceof Error ? error.message : "Bilinmeyen bir hata oluştu.";
+
+            if (errorMessage.includes('JSON') && analysisResponseRaw) {
+                console.log("JSON parsing failed. Falling back to direct answer.");
+                this.conversationManager.addMessage('assistant', analysisResponseRaw);
+                webview.postMessage({ type: 'addResponse', payload: analysisResponseRaw });
+            } else {
+                webview.postMessage({ type: 'addResponse', payload: `**Hata:** ${errorMessage}` });
+            }
         }
     }
     
@@ -176,10 +203,4 @@ export class MessageHandler {
         }
     }
 
-    private getErrorMessage(): string {
-        const activeService = this.apiManager.getActiveServiceName();
-        return activeService === API_SERVICES.gemini 
-            ? UI_MESSAGES.geminiConnectionError 
-            : UI_MESSAGES.vllmConnectionError;
-    }
 }
