@@ -1,22 +1,25 @@
 /* ==========================================================================
    ARAYÜZ (UI) YÖNETİM MODÜLÜ
    DOM'u güncelleyen, mesajları ekleyen/silen tüm fonksiyonları içerir.
+   YENİ: Diff görünümünü yönetir ve satır-satır fark oluşturur.
    ========================================================================== */
 
 import * as DOM from './dom.js';
 import { postMessage } from './vscode.js';
 
 let isAiResponding = false;
+let isDiffViewActive = false; 
 
-export const getAiRespondingState = () => isAiResponding;
+export const getAiRespondingState = () => isAiResponding || isDiffViewActive;
 
 export function setInputEnabled(enabled) {
+    const isActuallyEnabled = enabled && !isDiffViewActive;
     isAiResponding = !enabled;
-    DOM.input.disabled = !enabled;
-    DOM.sendButton.disabled = !enabled;
 
-    if (enabled) {
-        // DEĞİŞİKLİK: Placeholder metnini dosya sayısına göre ayarla
+    DOM.input.disabled = !isActuallyEnabled;
+    DOM.sendButton.disabled = !isActuallyEnabled;
+
+    if (isActuallyEnabled) {
         const fileTags = DOM.fileContextArea.querySelectorAll('.file-tag');
         if (fileTags.length > 0) {
             DOM.input.placeholder = `${fileTags.length} dosya hakkında bir talimat girin...`;
@@ -26,7 +29,12 @@ export function setInputEnabled(enabled) {
         DOM.sendButton.style.opacity = '1';
         DOM.sendButton.style.cursor = 'pointer';
         DOM.input.focus();
-    } else {
+    } else if (isDiffViewActive) {
+        DOM.input.placeholder = 'Lütfen önerilen değişikliği onaylayın veya reddedin.';
+        DOM.sendButton.style.opacity = '0.5';
+        DOM.sendButton.style.cursor = 'not-allowed';
+    } 
+    else {
         DOM.input.placeholder = 'İvme yanıtlıyor, lütfen bekleyin...';
         DOM.sendButton.style.opacity = '0.5';
         DOM.sendButton.style.cursor = 'not-allowed';
@@ -99,9 +107,7 @@ export function addAiMessage(text) {
 }
 
 export function showAiLoadingIndicator() {
-    const existingLoader = document.getElementById('ai-loading-placeholder');
-    if (existingLoader) return;
-
+    if (document.getElementById('ai-loading-placeholder')) return;
     const messageElement = createMessageElement('assistant', '<i>İvme düşünüyor...</i>');
     messageElement.id = 'ai-loading-placeholder';
     messageElement.querySelector('.avatar-wrapper').classList.add('loading');
@@ -123,36 +129,27 @@ export function showAiResponse(responseText) {
     DOM.chatContainer.scrollTop = DOM.chatContainer.scrollHeight;
 }
 
-// DEĞİŞİKLİK: Fonksiyon artık tek bir etiket yerine birden fazla etiket gösteriyor.
 export function displayFileTags(fileNames) {
-    DOM.fileContextArea.innerHTML = ''; // Önceki etiketleri temizle
-
+    DOM.fileContextArea.innerHTML = '';
     fileNames.forEach(fileName => {
         const tagElement = document.createElement('div');
         tagElement.className = 'file-tag';
-        
         const nameSpan = document.createElement('span');
         nameSpan.textContent = fileName;
         tagElement.appendChild(nameSpan);
-
         const removeButton = document.createElement('button');
         removeButton.className = 'remove-file-button';
         removeButton.title = 'Dosyayı Kaldır';
-        // YENİ: Butonun hangi dosyaya ait olduğunu belirtmek için data-attribute ekliyoruz.
         removeButton.dataset.fileName = fileName;
         removeButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.75.75 0 1 1 1.06 1.06L9.06 8l3.22 3.22a.75.75 0 1 1-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06z"></path></svg>`;
-        
-        // DEĞİŞİKLİK: Event listener artık 'removeFileContext' mesajı gönderiyor.
         removeButton.addEventListener('click', (event) => {
-            if(isAiResponding) return;
+            if(getAiRespondingState()) return;
             const fileToRemove = event.currentTarget.dataset.fileName;
             postMessage('removeFileContext', { fileName: fileToRemove });
         });
-        
         tagElement.appendChild(removeButton);
         DOM.fileContextArea.appendChild(tagElement);
     });
-
     DOM.input.placeholder = `${fileNames.length} dosya hakkında bir talimat girin...`;
 }
 
@@ -165,6 +162,7 @@ export function clearChat() {
     DOM.chatContainer.innerHTML = '';
     DOM.chatContainer.classList.add('hidden');
     DOM.welcomeContainer.classList.remove('hidden');
+    hideDiffView();
 }
 
 export function loadConversation(messages) {
@@ -179,4 +177,74 @@ export function loadConversation(messages) {
             createMessageElement(msg.role, content);
         });
     }
+}
+
+
+// --- GÜNCELLENMİŞ Diff Fonksiyonları ---
+
+/**
+ * İki metin arasındaki satır bazlı farkları oluşturan basit bir fonksiyon.
+ * @param {string} oldText - Eski metin.
+ * @param {string} newText - Yeni metin.
+ * @returns {string} Diff formatında birleştirilmiş metin.
+ */
+function createUnifiedDiff(oldText, newText) {
+    const oldLines = oldText.split(/\r?\n/);
+    const newLines = newText.split(/\r?\n/);
+    const maxLen = Math.max(oldLines.length, newLines.length);
+    const diffLines = [];
+
+    for (let i = 0; i < maxLen; i++) {
+        const oldLine = oldLines[i];
+        const newLine = newLines[i];
+
+        if (oldLine !== undefined && oldLine !== newLine) {
+            if(oldLine.trim() !== '') {
+                 diffLines.push(`- ${oldLine}`);
+            }
+        }
+        if (newLine !== undefined && oldLine !== newLine) {
+            if(newLine.trim() !== '') {
+                 diffLines.push(`+ ${newLine}`);
+            }
+        }
+        if (oldLine !== undefined && oldLine === newLine) {
+            diffLines.push(`  ${oldLine}`);
+        }
+    }
+    return diffLines.join('\n');
+}
+
+/**
+ * Fark görünümünü (diff view) gösterir ve kod bloklarını doldurur.
+ * @param {object} diffData - Orijinal ve değiştirilmiş kodları içeren veri.
+ */
+export function showDiffView(diffData) {
+    const loadingElement = document.getElementById('ai-loading-placeholder');
+    if (loadingElement) {
+       loadingElement.remove();
+    }
+    
+    const unifiedDiff = createUnifiedDiff(diffData.originalCode, diffData.modifiedCode);
+    
+    // GÜNCELLEME: Tek bir kod bloğunu dolduruyoruz.
+    DOM.unifiedDiffCodeBlock.textContent = unifiedDiff;
+    
+    // highlight.js'in yeni kodları 'diff' diline göre renklendirmesini sağla
+    hljs.highlightElement(DOM.unifiedDiffCodeBlock);
+
+    DOM.diffContainer.classList.remove('hidden');
+    isDiffViewActive = true;
+    setInputEnabled(false);
+}
+
+/**
+ * Fark görünümünü (diff view) gizler ve durumu sıfırlar.
+ */
+export function hideDiffView() {
+    DOM.diffContainer.classList.add('hidden');
+    // GÜNCELLEME: Tek kod bloğunu temizliyoruz.
+    DOM.unifiedDiffCodeBlock.textContent = '';
+    isDiffViewActive = false;
+    setInputEnabled(true);
 }

@@ -1,0 +1,90 @@
+/* ==========================================================================
+   FARK (DIFF) GÖRÜNÜMÜ STİLLERİ - GÜNCELLENMİŞ
+   ========================================================================== */
+
+.diff-container {
+    padding: 15px 25px 20px 25px;
+    border-top: 1px solid var(--vscode-widget-border);
+    background-color: var(--vscode-editor-background);
+    animation: fadeInUp 0.3s ease-out;
+    flex-shrink: 0;
+    /* Maksimum yükseklik verelim ki çok uzun diff'ler ekranı kaplamasın */
+    max-height: 50vh; 
+    display: flex;
+    flex-direction: column;
+}
+
+.diff-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-shrink: 0; /* Başlığın küçülmesini engelle */
+}
+
+.diff-header span {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--vscode-editor-foreground);
+}
+
+#close-diff-button {
+    background: none;
+    border: none;
+    color: var(--vscode-icon-foreground);
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    opacity: 0.7;
+}
+
+#close-diff-button:hover {
+    opacity: 1;
+    background-color: var(--vscode-toolbar-hoverBackground);
+}
+
+/* GÜNCELLEME: Artık tek bir panelimiz var */
+.diff-view {
+    flex-grow: 1; /* Kalan alanı kapla */
+    min-height: 0; /* Flexbox'ın taşmasını engelle */
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 8px;
+    overflow: hidden; /* İçindeki pre'nin border-radius'u bozmasını engelle */
+    display: flex; /* pre'nin içini doldurması için */
+    margin-bottom: 15px;
+}
+
+.diff-view pre {
+    margin: 0;
+    flex-grow: 1; /* Kapsayıcısını doldur */
+    overflow: auto; /* Hem dikey hem yatay kaydırma */
+    background-color: var(--vscode-textBlockQuote-background);
+}
+
+.diff-view pre code {
+    padding: 12px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    display: block;
+}
+
+/* YENİ: highlight.js'in eklediği diff sınıfları için stiller */
+.hljs-deletion {
+    background-color: rgba(220, 53, 69, 0.15);
+    display: block; /* Satırın tamamını kaplaması için */
+}
+
+.hljs-addition {
+    background-color: rgba(40, 167, 69, 0.15);
+    display: block; /* Satırın tamamını kaplaması için */
+}
+
+.diff-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-shrink: 0; /* Butonların küçülmesini engelle */
+}

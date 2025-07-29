@@ -1,4 +1,3 @@
-import * as vscode from 'vscode';
 import { API_SERVICES } from '../core/constants';
 
 // A type for the names of available services
@@ -30,12 +29,12 @@ export interface ChatMessage {
     content: string;
 }
 
-// YENİ EKLENDİ: Tek bir konuşma oturumunu temsil eder.
+/** Represents a single conversation session. */
 export interface Conversation {
-    id: string; // Her konuşma için benzersiz ID
-    timestamp: number; // Sıralama için oluşturulma zamanı
-    title: string; // Konuşma başlığı (örn: ilk kullanıcı mesajı)
-    messages: ChatMessage[]; // O konuşmaya ait mesajlar
+    id: string; 
+    timestamp: number; 
+    title: string; 
+    messages: ChatMessage[];
 }
 
 
@@ -45,13 +44,42 @@ export interface Conversation {
 export interface AiResponse {
     intent: 'answer' | 'modify';
     explanation: string;
-    fileName?: string; // YENİ: Değiştirilen dosyanın adını tutmak için eklendi.
+    fileName?: string; 
     modifiedCode: string;
 }
 
 //================================================
-// VS Code Command Argument Types
+// VS Code Command and Webview Message Argument Types
 //================================================
+
+/** * YENİ: Webview'e fark (diff) görünümünü göstermek için gönderilecek veri yapısı.
+ * Bu yapı, hem eski hem de yeni kodu ve değişikliğin uygulanması için
+ * gerekli bağlamı içerir.
+ */
+export interface DiffData {
+    originalCode: string;
+    modifiedCode: string;
+    // Değişikliğin tam bir dosyaya mı yoksa sadece bir seçime mi ait olduğunu belirtir.
+    context: {
+        type: 'file' | 'selection';
+        // 'file' tipi için değiştirilecek dosyanın URI'si.
+        fileUri?: string; 
+        // 'selection' tipi için dosya URI'si ve seçim aralığı.
+        selection?: {
+            uri: string;
+            range: [number, number, number, number];
+        };
+    };
+}
+
+/** * YENİ: Kullanıcı "Onayla" butonuna tıkladığında webview'den eklentiye gönderilecek 
+ * veri yapısı. `DiffData`'yı tekrar içerir, böylece eklenti hangi değişikliği 
+ * uygulayacağını bilir.
+ */
+export interface ApproveChangeArgs {
+    diff: DiffData;
+}
+
 
 /** Defines the structure of arguments for the 'applyFix' command. */
 export interface ApplyFixArgs {

@@ -9,6 +9,9 @@ import * as VsCode from './vscode.js';
 import { populateHistory } from './components/history.js';
 import { loadConfig } from './components/settings.js';
 
+// Onaylanmayı bekleyen diff verisini tutmak için bir değişken.
+let pendingDiffData = null;
+
 function handleSendMessage() {
     if (UI.getAiRespondingState()) return;
     const text = DOM.input.value;
@@ -19,6 +22,24 @@ function handleSendMessage() {
     VsCode.postMessage('askAI', text);
     UI.setInputEnabled(false);
 }
+
+// Onay butonuna tıklandığında çalışacak fonksiyon.
+function handleApproveChange() {
+    if (pendingDiffData) {
+        VsCode.postMessage('approveChange', { diff: pendingDiffData });
+        // Butonları geçici olarak devre dışı bırak, eklentiden yanıt bekleniyor.
+        DOM.approveChangeButton.disabled = true;
+        DOM.rejectChangeButton.disabled = true;
+        DOM.approveChangeButton.textContent = 'Uygulanıyor...';
+    }
+}
+
+// Reddet veya Kapat butonuna tıklandığında çalışacak fonksiyon.
+function handleRejectOrCloseChange() {
+    pendingDiffData = null;
+    UI.hideDiffView();
+}
+
 
 export function initEventHandlers() {
     DOM.sendButton.addEventListener('click', handleSendMessage);
@@ -38,6 +59,11 @@ export function initEventHandlers() {
         if (UI.getAiRespondingState()) return;
         VsCode.postMessage('requestFileUpload');
     });
+
+    // Diff görünümü butonları için olay dinleyicileri
+    DOM.approveChangeButton.addEventListener('click', handleApproveChange);
+    DOM.rejectChangeButton.addEventListener('click', handleRejectOrCloseChange);
+    DOM.closeDiffButton.addEventListener('click', handleRejectOrCloseChange);
 }
 
 export function initMessageListener() {
@@ -49,7 +75,21 @@ export function initMessageListener() {
                 UI.showAiResponse(data);
                 UI.setInputEnabled(true);
                 break;
-            // DEĞİŞİKLİK: 'fileContextSet' artık bir dizi dosya adı alıyor.
+            
+            case 'showDiff':
+                pendingDiffData = data; // Onay bekleyen veriyi sakla
+                UI.showDiffView(data);
+                break;
+
+            case 'changeApproved':
+                handleRejectOrCloseChange(); // Diff görünümünü gizle ve sıfırla
+                UI.addAiMessage("Değişiklik başarıyla uygulandı!");
+                // Butonları tekrar eski haline getir.
+                DOM.approveChangeButton.disabled = false;
+                DOM.rejectChangeButton.disabled = false;
+                DOM.approveChangeButton.textContent = 'Değişikliği Onayla';
+                break;
+
             case 'fileContextSet': 
                 UI.displayFileTags(message.fileNames); 
                 break;

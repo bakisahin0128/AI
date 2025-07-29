@@ -1,23 +1,42 @@
 /* ==========================================================================
    DOSYA 5: src/core/utils.ts (GÜNCELLENMİŞ DOSYA)
    
-   SORUMLULUK: Proje genelinde kullanılacak yardımcı fonksiyonları barındırır.
+   SORMLULUK: Proje genelinde kullanılacak yardımcı fonksiyonları barındırır.
+   YENİ: cleanLLMJsonBlock fonksiyonu daha akıllı hale getirildi.
    ========================================================================== */
-
-// ... cleanLLMCodeBlock ve cleanLLMJsonBlock fonksiyonları burada kalacak ...
 
 export function cleanLLMCodeBlock(rawResponse: string): string {
     const cleaned = rawResponse.replace(/^```(?:\w+)?\s*\n|```\s*$/g, '');
     return cleaned.trim();
 }
 
+/**
+ * YENİ ve GÜÇLENDİRİLMİŞ FONKSİYON
+ * Modelden gelen yanıtın içinden JSON metnini daha güvenilir bir şekilde çıkarır.
+ * Önce markdown bloğunu arar, bulamazsa ilk '{' ve son '}' arasındaki metni alır.
+ * @param rawResponse Modelden gelen ham metin.
+ * @returns Temizlenmiş JSON string'i.
+ */
 export function cleanLLMJsonBlock(rawResponse: string): string {
+    // 1. Önce standart markdown bloğunu ara
     const jsonMatch = rawResponse.match(/```json\s*([\s\S]*?)\s*```/);
-    const potentialJson = jsonMatch ? jsonMatch[1] : rawResponse;
-    return potentialJson.trim();
+    if (jsonMatch && jsonMatch[1]) {
+        return jsonMatch[1].trim();
+    }
+
+    // 2. Markdown bloğu yoksa, ilk açılan ve son kapanan süslü parantezi bul
+    const firstBrace = rawResponse.indexOf('{');
+    const lastBrace = rawResponse.lastIndexOf('}');
+
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+        // Parantezler arasındaki metni alıp temizle
+        return rawResponse.substring(firstBrace, lastBrace + 1).trim();
+    }
+
+    // 3. Hiçbir şey bulunamazsa, orijinal yanıtı (muhtemelen hatalı) geri döndür
+    return rawResponse.trim();
 }
 
-// YENİ EKLENEN FONKSİYONLAR
 export function generateUUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
         const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);

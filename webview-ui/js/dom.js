@@ -36,6 +36,15 @@ export const historyLimitInput = document.getElementById('history-limit');
 export const navButtons = document.querySelectorAll('.nav-button');
 export const settingsPanes = document.querySelectorAll('.settings-pane');
 
+// --- Fark (Diff) Görünümü Elementleri ---
+export const diffContainer = document.getElementById('diff-container');
+// GÜNCELLEME: İki ayrı blok referansı yerine tek bir birleşik blok referansı
+export const unifiedDiffCodeBlock = document.getElementById('unified-diff-code-block');
+export const approveChangeButton = document.getElementById('approve-change-button');
+export const rejectChangeButton = document.getElementById('reject-change-button');
+export const closeDiffButton = document.getElementById('close-diff-button');
+
+
 // --- İkon URI'ları ---
 export const AI_ICON_URI = chatContainer.dataset.aiIconUri;
 export const USER_ICON_URI = chatContainer.dataset.userIconUri;

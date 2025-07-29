@@ -2,10 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-
-    <!-- GÜNCELLEME: İçerik Güvenlik Politikası (CSP) eklendi. Bu, CSS ve script'lerin güvenli bir şekilde yüklenmesini sağlar. -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{cspSource}} https://cdnjs.cloudflare.com; script-src 'nonce-{{nonce}}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src {{cspSource}} https:;">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <link href="{{chat_css_uri}}" rel="stylesheet">
@@ -43,7 +40,20 @@
     </div>
 
     <div id="chat-container" class="hidden" data-ai-icon-uri="{{ai_icon_uri}}" data-user-icon-uri="{{user_icon_uri}}"></div>
-
+    
+    <div id="diff-container" class="diff-container hidden">
+        <div class="diff-header">
+            <span>Önerilen Değişiklik</span>
+            <button id="close-diff-button" title="Kapat">×</button>
+        </div>
+        <div class="diff-view">
+            <pre><code id="unified-diff-code-block" class="language-diff"></code></pre>
+        </div>
+        <div class="diff-actions">
+            <button id="approve-change-button" class="primary-button">Değişikliği Onayla</button>
+            <button id="reject-change-button" class="secondary-button">Reddet</button>
+        </div>
+    </div>
     <div id="file-context-area"></div>
 
     <div class="input-area">
@@ -84,7 +94,6 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     
-    <!-- GÜNCELLEME: 'nonce' değeri script'in çalışmasına izin vermek için eklendi. -->
     <script type="module" src="{{chat_js_uri}}" nonce="{{nonce}}"></script>
 </body>
 </html>

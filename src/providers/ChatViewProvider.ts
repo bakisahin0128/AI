@@ -4,6 +4,7 @@
    SORUMLULUK: Artık sadece bir orkestra şefi gibi davranır. Webview'i
    oluşturur, yöneticileri (manager) başlatır ve gelen mesajları ilgili
    yöneticiye yönlendirir.
+   YENİ: 'approveChange' mesajını işler ve 'showDiff'i delege eder.
    ========================================================================== */
 
 import * as vscode from 'vscode';
@@ -52,7 +53,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
             switch (data.type) {
                 case 'askAI': {
                     const userMessage = data.payload;
-                    // DEĞİŞİKLİK: Tek bir dosya yerine dosya dizisini kontrol et.
                     if (this.contextManager.uploadedFileContexts.length > 0) {
                         await this.messageHandler.handleFileContextInteraction(userMessage, this.contextManager.uploadedFileContexts, this._view.webview);
                     } else if (this.contextManager.activeContextText && this.contextManager.activeEditorUri && this.contextManager.activeSelection) {
@@ -63,13 +63,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     }
                     break;
                 }
+                
+                // YENİ: Kullanıcının değişikliği onayladığı mesajı işle.
+                case 'approveChange': {
+                    await this.messageHandler.handleApproveChange(data.payload, this._view.webview);
+                    break;
+                }
 
                 case 'newChat': {
                     const activeConv = this.conversationManager.getActive();
-                    // Eğer mevcut sohbet zaten boşsa veya sadece sistem mesajı varsa bir şey yapma
                     if (activeConv && activeConv.messages.length <= 1 && this.contextManager.uploadedFileContexts.length === 0) break; 
                     
-                    // YENİ EKLENEN SATIR: Yeni sohbete başlamadan önce dosya bağlamını temizle.
                     this.contextManager.clearAll(this._view.webview);
 
                     this.conversationManager.createNew();
@@ -98,7 +102,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     } else {
                         this._view.webview.postMessage({ type: 'clearChat' });
                     }
-                    // Geçmiş listesini de güncelle
                     const historySummary = this.conversationManager.getHistorySummary();
                     this._view.webview.postMessage({ type: 'loadHistory', payload: historySummary });
                     break;
@@ -108,12 +111,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                     await this.contextManager.setFileContext(this._view.webview); 
                     break;
                 
-                // YENİ: Tek bir dosyayı kaldırma isteğini işle.
                 case 'removeFileContext': 
                     this.contextManager.removeFileContext(data.payload.fileName, this._view.webview);
                     break;
                 
-                case 'clearFileContext': // Bu artık kullanılmayacak, removeFileContext'e bırakıldı ama acil durum için kalabilir.
+                case 'clearFileContext':
                     this.contextManager.clearAll(this._view.webview); 
                     break;
                 
@@ -137,7 +139,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         });
     }
     
-    // Bu public metot, extension.ts'den çağrılmaya devam edecek
     public setActiveContext(uri: vscode.Uri, selection: vscode.Selection, text: string) {
         if (this._view) {
             this.contextManager.setEditorContext(uri, selection, text, this._view.webview);
